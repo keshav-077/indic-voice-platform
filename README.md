@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🇮🇳 VoiceBharat Pro
+<img src="docs/images/logo-banner.gif" alt="VoiceBharat Pro — enterprise voice AI for 22 Indian languages" width="920"/>
+
+# VoiceBharat Pro
 
 ### *Enterprise-Grade Multilingual Voice AI for Indian Languages*
-
-![VoiceBharat Logo](https://img.shields.io/badge/VoiceBharat-Pro-orange?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImIiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZjk5MzMiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxMzhiMDgiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjY2LjY3IiBmaWxsPSIjZmY5OTMzIi8+PHJlY3QgeT0iNjYuNjciIHdpZHRoPSIyMDAiIGhlaWdodD0iNjYuNjciIGZpbGw9IiNmZmZmZmYiLz48cmVjdCB5PSIxMzMuMzQiIHdpZHRoPSIyMDAiIGhlaWdodD0iNjYuNjciIGZpbGw9IiMxMzhhMDgiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjM1IiBmaWxsPSIjMDAwMDgwIiBvcGFjaXR5PSIuMSIvPjwvc3ZnPg==)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
