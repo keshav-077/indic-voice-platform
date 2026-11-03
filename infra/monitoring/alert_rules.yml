@@ -1,0 +1,78 @@
+groups:
+  - name: bharatvoiceai_alerts
+    rules:
+      # Availability
+      - alert: VAIAPIDown
+        expr: up{job="bharatvoiceai"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "BharatVoiceAI is down"
+          description: "The BharatVoiceAI has been unreachable for more than 1 minute."
+
+      - alert: HighErrorRate
+        expr: |
+          rate(vai_api_calls_total{success="false"}[5m]) /
+          rate(vai_api_calls_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API error rate (>5%)"
+          description: "Service {{ $labels.service }} error rate is {{ $value | humanizePercentage }}."
+
+      # Latency
+      - alert: HighASRLatency
+        expr: histogram_quantile(0.95, rate(vai_api_latency_ms_bucket{service="asr"}[5m])) > 2000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ASR P95 latency exceeds 2 seconds"
+          description: "P95 ASR latency is {{ $value }}ms. Check GPU/CPU load."
+
+      - alert: HighMTLatency
+        expr: histogram_quantile(0.95, rate(vai_api_latency_ms_bucket{service="mt"}[5m])) > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MT P95 latency exceeds 500ms"
+
+      # Model Quality
+      - alert: ASRWERDegradation
+        expr: vai_asr_wer > 25
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ASR WER above 25% threshold"
+          description: "{{ $labels.lang }} WER on {{ $labels.backend }} is {{ $value }}%. Model may have drifted."
+
+      - alert: MTBLEUDegradation
+        expr: vai_mt_bleu < 20
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MT BLEU below 20 threshold"
+          description: "{{ $labels.lang_pair }} BLEU on {{ $labels.backend }} is {{ $value }}."
+
+      # Infrastructure
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down — rate limiting degraded"
+
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{container="api"} / container_spec_memory_limit_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API container memory >85%"
+          description: "Memory may OOM. Consider adding replicas or increasing limits."

@@ -1,0 +1,49 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]        # Block large model files
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.5
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [pydantic, fastapi]
+        args: ["--ignore-missing-imports"]
+        files: ^(api|services|core)/
+
+  # Prevent committing .env files
+  - repo: local
+    hooks:
+      - id: no-env-files
+        name: Block .env files
+        entry: >
+          bash -c 'git diff --cached --name-only | grep -E "^\.env$|^\.env\." &&
+          echo "Do not commit .env files" && exit 1 || exit 0'
+        language: system
+        pass_filenames: false
+
+      - id: dco-sign-off
+        name: Check DCO sign-off
+        entry: >
+          bash -c 'git log -1 --pretty=%B | grep -q "Signed-off-by:" ||
+          (echo "Missing Signed-off-by. Use git commit -s" && exit 1)'
+        language: system
+        pass_filenames: false
+        stages: [commit-msg]

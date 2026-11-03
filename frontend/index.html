@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BharatVoiceAI</title>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #a5b4fc;
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #475569;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, var(--bg-card), #1a1a2e);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .logo h1 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .logo span {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .api-config {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .api-config label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .api-config input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      width: 200px;
+    }
+
+    .api-config input::placeholder { color: var(--text-muted); }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--error);
+      transition: background 0.3s;
+    }
+
+    .status-dot.connected { background: var(--success); }
+
+    /* Layout */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab:hover {
+      background: var(--bg-card);
+      color: var(--text);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .tab-icon {
+      font-size: 16px;
+    }
+
+    /* Panels */
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* Form elements */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-group select { cursor: pointer; }
+    .form-group select option { background: var(--bg-card); }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-input);
+      color: var(--text);
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result */
+    .result-area {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .result-area.visible { display: block; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .result-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .result-meta .tag {
+      background: var(--bg-input);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .result-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .result-box.error {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* Audio player */
+    .audio-player {
+      margin-top: 12px;
+    }
+
+    .audio-player audio {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    /* File upload */
+    .file-drop {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .file-drop:hover, .file-drop.dragover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .file-drop input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .file-drop .label {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .file-drop .label strong {
+      color: var(--primary-light);
+    }
+
+    .file-name {
+      font-size: 13px;
+      color: var(--success);
+      margin-top: 6px;
+    }
+
+    /* Mic recorder */
+    .mic-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .mic-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mic-btn:hover { border-color: var(--primary); }
+
+    .mic-btn.recording {
+      background: var(--error);
+      border-color: var(--error);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+    }
+
+    .mic-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mic-status {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .mic-timer {
+      font-size: 24px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+    }
+
+    .mic-timer.active { color: var(--error); }
+
+    .mic-visualizer {
+      flex: 1;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .mic-visualizer .bar {
+      width: 3px;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: height 0.1s;
+      min-height: 4px;
+    }
+
+    /* Checkbox / toggle */
+    .check-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .check-group input[type="checkbox"] {
+      accent-color: var(--primary);
+      width: 16px;
+      height: 16px;
+    }
+
+    .check-group label {
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* Language grid */
+    .lang-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; gap: 12px; }
+      .tabs { gap: 4px; }
+      .tab { padding: 8px 14px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">V</div>
+    <div>
+      <h1>BharatVoiceAI</h1>
+      <span>22 Indian Languages &middot; ASR &middot; MT &middot; TTS &middot; LID &middot; NLU</span>
+    </div>
+  </div>
+  <div class="api-config">
+    <label>API Base</label>
+    <input type="text" id="apiBase" value="http://localhost:8000" placeholder="http://localhost:8000">
+    <label>API Key</label>
+    <input type="text" id="apiToken" value="dev-test-key-12345" placeholder="API key">
+    <div class="status-dot" id="statusDot" title="Server status"></div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="asr">
+      <span class="tab-icon">&#127908;</span> Speech to Text
+    </button>
+    <button class="tab" data-tab="mt">
+      <span class="tab-icon">&#127760;</span> Translate
+    </button>
+    <button class="tab" data-tab="tts">
+      <span class="tab-icon">&#128264;</span> Text to Speech
+    </button>
+    <button class="tab" data-tab="lid">
+      <span class="tab-icon">&#128269;</span> Language ID
+    </button>
+    <button class="tab" data-tab="nlu">
+      <span class="tab-icon">&#129504;</span> NLU / Intent
+    </button>
+  </div>
+
+  <!-- ==================== ASR Panel ==================== -->
+  <div class="panel active" id="panel-asr">
+    <div class="card">
+      <div class="card-title">Speech to Text (ASR)</div>
+      <div class="card-desc">Upload audio or paste a URL. Supports WAV, MP3, OPUS, OGG, FLAC. Max 25 MB.</div>
+
+      <!-- Mic recorder -->
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Record from Microphone</label>
+        <div class="mic-section">
+          <button class="mic-btn" id="micBtn" onclick="toggleRecording()" title="Click to record">&#127908;</button>
+          <div class="mic-info">
+            <div class="mic-status" id="micStatus">Click to start recording</div>
+            <div class="mic-timer" id="micTimer">00:00</div>
+          </div>
+          <div class="mic-visualizer" id="micVisualizer"></div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Or Upload Audio File</label>
+          <div class="file-drop" id="asrFileDrop">
+            <input type="file" id="asrFile" accept="audio/*">
+            <div class="label">Drop audio file here or <strong>browse</strong></div>
+            <div class="file-name" id="asrFileName"></div>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Or Audio URL</label>
+          <input type="url" id="asrUrl" placeholder="https://example.com/audio.wav">
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <select id="asrLang">
+            <option value="">Auto-detect</option>
+            <option value="hi">Hindi (hi)</option>
+            <option value="ta">Tamil (ta)</option>
+            <option value="te">Telugu (te)</option>
+            <option value="bn">Bengali (bn)</option>
+            <option value="mr">Marathi (mr)</option>
+            <option value="gu">Gujarati (gu)</option>
+            <option value="kn">Kannada (kn)</option>
+            <option value="ml">Malayalam (ml)</option>
+            <option value="pa">Punjabi (pa)</option>
+            <option value="or">Odia (or)</option>
+            <option value="as">Assamese (as)</option>
+            <option value="ur">Urdu (ur)</option>
+            <option value="en">English (en)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Backend</label>
+          <select id="asrBackend">
+            <option value="auto">Auto</option>
+            <option value="indicwhisper">IndicWhisper</option>
+            <option value="bhashini">BHASHINI</option>
+            <option value="wav2vec2">Wav2Vec2</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="check-group">
+        <input type="checkbox" id="asrTimestamps">
+        <label for="asrTimestamps">Return word timestamps</label>
+      </div>
+      <div class="check-group">
+        <input type="checkbox" id="asrConsent" checked>
+        <label for="asrConsent">I consent to processing this audio (DPDP 2023)</label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" id="asrSubmit" onclick="submitASR()">Transcribe</button>
+        <button class="btn btn-ghost" onclick="clearResult('asr')">Clear</button>
+      </div>
+
+      <div class="result-area" id="result-asr">
+        <div class="result-header">
+          <span class="result-label">Transcript</span>
+          <div class="result-meta">
+            <span class="tag" id="asrResBackend"></span>
+            <span class="tag" id="asrResLang"></span>
+            <span class="tag" id="asrResTime"></span>
+            <span class="tag" id="asrResConf"></span>
+          </div>
+        </div>
+        <div class="result-box" id="asrResText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MT Panel ==================== -->
+  <div class="panel" id="panel-mt">
+    <div class="card">
+      <div class="card-title">Machine Translation</div>
+      <div class="card-desc">Translate text between 22 Indian languages and English. Up to 5000 characters.</div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Source Text</label>
+          <textarea id="mtText" rows="4" placeholder="Type or paste text to translate..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>From</label>
+          <select id="mtSrc">
+            <option value="en">English (en)</option>
+            <option value="hi">Hindi (hi)</option>
+            <option value="ta">Tamil (ta)</option>
+            <option value="te">Telugu (te)</option>
+            <option value="bn">Bengali (bn)</option>
+            <option value="mr">Marathi (mr)</option>
+            <option value="gu">Gujarati (gu)</option>
+            <option value="kn">Kannada (kn)</option>
+            <option value="ml">Malayalam (ml)</option>
+            <option value="pa">Punjabi (pa)</option>
+            <option value="or">Odia (or)</option>
+            <option value="as">Assamese (as)</option>
+            <option value="ur">Urdu (ur)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>To</label>
+          <select id="mtTgt">
+            <option value="hi">Hindi (hi)</option>
+            <option value="en">English (en)</option>
+            <option value="ta">Tamil (ta)</option>
+            <option value="te">Telugu (te)</option>
+            <option value="bn">Bengali (bn)</option>
+            <option value="mr">Marathi (mr)</option>
+            <option value="gu">Gujarati (gu)</option>
+            <option value="kn">Kannada (kn)</option>
+            <option value="ml">Malayalam (ml)</option>
+            <option value="pa">Punjabi (pa)</option>
+            <option value="or">Odia (or)</option>
+            <option value="as">Assamese (as)</option>
+            <option value="ur">Urdu (ur)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Backend</label>
+          <select id="mtBackend">
+            <option value="auto">Auto</option>
+            <option value="indictrans2">IndicTrans2</option>
+            <option value="bhashini">BHASHINI</option>
+            <option value="sarvam">Sarvam AI</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="submitMT()">Translate</button>
+        <button class="btn btn-ghost" onclick="clearResult('mt')">Clear</button>
+      </div>
+
+      <div class="result-area" id="result-mt">
+        <div class="result-header">
+          <span class="result-label">Translation</span>
+          <div class="result-meta">
+            <span class="tag" id="mtResBackend"></span>
+            <span class="tag" id="mtResTime"></span>
+            <span class="tag" id="mtResConf"></span>
+          </div>
+        </div>
+        <div class="result-box" id="mtResText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TTS Panel ==================== -->
+  <div class="panel" id="panel-tts">
+    <div class="card">
+      <div class="card-title">Text to Speech (TTS)</div>
+      <div class="card-desc">Convert text to natural speech in any Indian language. 44 voices available.</div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Text to speak</label>
+          <textarea id="ttsText" rows="3" placeholder="Type text in any Indian language..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <select id="ttsLang">
+            <option value="hi">Hindi (hi)</option>
+            <option value="ta">Tamil (ta)</option>
+            <option value="te">Telugu (te)</option>
+            <option value="bn">Bengali (bn)</option>
+            <option value="mr">Marathi (mr)</option>
+            <option value="gu">Gujarati (gu)</option>
+            <option value="kn">Kannada (kn)</option>
+            <option value="ml">Malayalam (ml)</option>
+            <option value="pa">Punjabi (pa)</option>
+            <option value="or">Odia (or)</option>
+            <option value="as">Assamese (as)</option>
+            <option value="ur">Urdu (ur)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Voice</label>
+          <select id="ttsVoice">
+            <option value="female_1">Female 1</option>
+            <option value="female_2">Female 2</option>
+            <option value="male_1">Male 1</option>
+            <option value="male_2">Male 2</option>
+            <option value="neutral">Neutral</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Format</label>
+          <select id="ttsFormat">
+            <option value="mp3">MP3</option>
+            <option value="wav">WAV</option>
+            <option value="opus">OPUS</option>
+            <option value="ogg">OGG</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Speed (0.5x - 2.0x)</label>
+          <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0"
+                 oninput="document.getElementById('ttsSpeedVal').textContent = this.value + 'x'">
+          <span id="ttsSpeedVal" style="font-size:13px; color:var(--text-muted)">1.0x</span>
+        </div>
+        <div class="form-group">
+          <label>Backend</label>
+          <select id="ttsBackend">
+            <option value="auto">Auto</option>
+            <option value="indic_parler">Indic Parler-TTS</option>
+            <option value="bhashini">BHASHINI</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="submitTTS()">Speak</button>
+        <button class="btn btn-ghost" onclick="clearResult('tts')">Clear</button>
+      </div>
+
+      <div class="result-area" id="result-tts">
+        <div class="result-header">
+          <span class="result-label">Audio Output</span>
+          <div class="result-meta">
+            <span class="tag" id="ttsResBackend"></span>
+            <span class="tag" id="ttsResTime"></span>
+            <span class="tag" id="ttsResDuration"></span>
+          </div>
+        </div>
+        <div class="audio-player" id="ttsAudioPlayer"></div>
+        <div class="result-box" id="ttsResText" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LID Panel ==================== -->
+  <div class="panel" id="panel-lid">
+    <div class="card">
+      <div class="card-title">Language Identification (LID)</div>
+      <div class="card-desc">Detect which Indian language a text or audio sample is in. Detects code-mixing too.</div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Text</label>
+          <textarea id="lidText" rows="3" placeholder="Type or paste text in any language... e.g. 'mera naam Rahul hai'"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Top-K results</label>
+          <select id="lidTopK">
+            <option value="1">1</option>
+            <option value="3" selected>3</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="submitLID()">Identify Language</button>
+        <button class="btn btn-ghost" onclick="clearResult('lid')">Clear</button>
+      </div>
+
+      <div class="result-area" id="result-lid">
+        <div class="result-header">
+          <span class="result-label">Detection Result</span>
+          <div class="result-meta">
+            <span class="tag" id="lidResBackend"></span>
+            <span class="tag" id="lidResTime"></span>
+          </div>
+        </div>
+        <div class="result-box" id="lidResText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== NLU Panel ==================== -->
+  <div class="panel" id="panel-nlu">
+    <div class="card">
+      <div class="card-title">NLU / Intent Recognition</div>
+      <div class="card-desc">Extract intent and entities from user utterances in Indian languages.</div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>User Utterance</label>
+          <textarea id="nluText" rows="3" placeholder="e.g. 'mera bill dikhao' or 'mujhe doctor se milna hai'"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <select id="nluLang">
+            <option value="hi">Hindi (hi)</option>
+            <option value="ta">Tamil (ta)</option>
+            <option value="te">Telugu (te)</option>
+            <option value="bn">Bengali (bn)</option>
+            <option value="en">English (en)</option>
+            <option value="mr">Marathi (mr)</option>
+            <option value="gu">Gujarati (gu)</option>
+            <option value="kn">Kannada (kn)</option>
+            <option value="ml">Malayalam (ml)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Domain</label>
+          <select id="nluDomain">
+            <option value="general">General</option>
+            <option value="billing">Billing</option>
+            <option value="banking">Banking</option>
+            <option value="healthcare">Healthcare</option>
+            <option value="agriculture">Agriculture</option>
+            <option value="ecommerce">E-Commerce</option>
+            <option value="education">Education</option>
+            <option value="government">Government</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="check-group">
+        <input type="checkbox" id="nluGenResponse">
+        <label for="nluGenResponse">Generate natural language response (uses LLM)</label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="submitNLU()">Analyze</button>
+        <button class="btn btn-ghost" onclick="clearResult('nlu')">Clear</button>
+      </div>
+
+      <div class="result-area" id="result-nlu">
+        <div class="result-header">
+          <span class="result-label">NLU Result</span>
+          <div class="result-meta">
+            <span class="tag" id="nluResBackend"></span>
+            <span class="tag" id="nluResTime"></span>
+            <span class="tag" id="nluResConf"></span>
+          </div>
+        </div>
+        <div class="result-box" id="nluResText"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+
+function getBase() { return document.getElementById('apiBase').value.replace(/\/+$/, ''); }
+function getHeaders() {
+  const token = document.getElementById('apiToken').value;
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['X-API-Key'] = token;
+  return h;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── File drop UI ──────────────────────────────────────────────────────────────
+
+const asrFileDrop = document.getElementById('asrFileDrop');
+const asrFile = document.getElementById('asrFile');
+
+['dragover', 'dragenter'].forEach(evt => {
+  asrFileDrop.addEventListener(evt, e => { e.preventDefault(); asrFileDrop.classList.add('dragover'); });
+});
+['dragleave', 'drop'].forEach(evt => {
+  asrFileDrop.addEventListener(evt, () => asrFileDrop.classList.remove('dragover'));
+});
+
+asrFile.addEventListener('change', () => {
+  const name = asrFile.files[0]?.name || '';
+  document.getElementById('asrFileName').textContent = name;
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function showResult(id, isError) {
+  const el = document.getElementById('result-' + id);
+  el.classList.add('visible');
+  const box = el.querySelector('.result-box');
+  if (box) {
+    box.classList.toggle('error', !!isError);
+  }
+}
+
+function clearResult(id) {
+  const el = document.getElementById('result-' + id);
+  el.classList.remove('visible');
+}
+
+function setLoading(btn, loading) {
+  if (loading) {
+    btn.disabled = true;
+    btn._origHTML = btn.innerHTML;
+    btn.innerHTML = '<div class="spinner"></div> Processing...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn._origHTML;
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function apiCall(endpoint, body) {
+  const resp = await fetch(getBase() + endpoint, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json();
+  if (!resp.ok) {
+    throw new Error(data.detail?.message || data.detail || JSON.stringify(data));
+  }
+  return data;
+}
+
+// ── Health check ──────────────────────────────────────────────────────────────
+
+async function checkHealth() {
+  try {
+    const resp = await fetch(getBase() + '/health', { method: 'GET' });
+    document.getElementById('statusDot').classList.toggle('connected', resp.ok);
+  } catch {
+    document.getElementById('statusDot').classList.remove('connected');
+  }
+}
+
+document.getElementById('apiBase').addEventListener('change', checkHealth);
+setInterval(checkHealth, 15000);
+checkHealth();
+
+// ── Mic Recording ─────────────────────────────────────────────────────────────
+
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStream = null;
+let recordingTimer = null;
+let recordingSeconds = 0;
+let analyserNode = null;
+let animFrameId = null;
+let recordedBlob = null;
+
+// Create visualizer bars
+const vizContainer = document.getElementById('micVisualizer');
+const BAR_COUNT = 40;
+for (let i = 0; i < BAR_COUNT; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  bar.style.height = '4px';
+  vizContainer.appendChild(bar);
+}
+
+async function toggleRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recordingStream = stream;
+    audioChunks = [];
+    recordedBlob = null;
+
+    // Clear any previous file selection
+    document.getElementById('asrFile').value = '';
+    document.getElementById('asrFileName').textContent = '';
+    document.getElementById('asrUrl').value = '';
+
+    // Audio context for visualizer
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 128;
+    source.connect(analyserNode);
+
+    // MediaRecorder
+    mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMime() });
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+    mediaRecorder.onstop = () => {
+      recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      document.getElementById('micStatus').textContent = 'Recording saved (' + formatTime(recordingSeconds) + ')';
+      document.getElementById('asrFileName').textContent = 'mic-recording.' + (mediaRecorder.mimeType.includes('webm') ? 'webm' : 'ogg');
+    };
+
+    mediaRecorder.start(250); // collect chunks every 250ms
+
+    // UI updates
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micBtn').innerHTML = '&#9632;'; // stop icon
+    document.getElementById('micStatus').textContent = 'Recording...';
+    document.getElementById('micTimer').classList.add('active');
+
+    // Timer
+    recordingSeconds = 0;
+    updateTimer();
+    recordingTimer = setInterval(() => {
+      recordingSeconds++;
+      updateTimer();
+      if (recordingSeconds >= 120) stopRecording(); // max 2 min
+    }, 1000);
+
+    // Visualizer
+    drawVisualizer();
+
+  } catch (err) {
+    alert('Microphone access denied. Please allow microphone access and try again.');
+    console.error('Mic error:', err);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+  if (recordingStream) {
+    recordingStream.getTracks().forEach(t => t.stop());
+    recordingStream = null;
+  }
+  clearInterval(recordingTimer);
+  cancelAnimationFrame(animFrameId);
+
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micBtn').innerHTML = '&#127908;';
+  document.getElementById('micTimer').classList.remove('active');
+
+  // Reset visualizer bars
+  vizContainer.querySelectorAll('.bar').forEach(b => b.style.height = '4px');
+}
+
+function updateTimer() {
+  const m = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+  const s = String(recordingSeconds % 60).padStart(2, '0');
+  document.getElementById('micTimer').textContent = m + ':' + s;
+}
+
+function drawVisualizer() {
+  if (!analyserNode || !mediaRecorder || mediaRecorder.state !== 'recording') return;
+  const data = new Uint8Array(analyserNode.frequencyBinCount);
+  analyserNode.getByteFrequencyData(data);
+  const bars = vizContainer.querySelectorAll('.bar');
+  const step = Math.floor(data.length / BAR_COUNT);
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const val = data[i * step] || 0;
+    bars[i].style.height = Math.max(4, (val / 255) * 40) + 'px';
+  }
+  animFrameId = requestAnimationFrame(drawVisualizer);
+}
+
+function getSupportedMime() {
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+  for (const t of types) {
+    if (MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return '';
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return (m > 0 ? m + 'm ' : '') + s + 's';
+}
+
+// ── ASR ───────────────────────────────────────────────────────────────────────
+
+async function submitASR() {
+  const btn = document.querySelector('#panel-asr .btn-primary');
+  setLoading(btn, true);
+
+  try {
+    const body = {
+      lang: document.getElementById('asrLang').value || null,
+      backend: document.getElementById('asrBackend').value,
+      return_word_timestamps: document.getElementById('asrTimestamps').checked,
+      consent_given: document.getElementById('asrConsent').checked,
+    };
+
+    const file = document.getElementById('asrFile').files[0];
+    const url = document.getElementById('asrUrl').value.trim();
+
+    if (recordedBlob) {
+      // Use mic recording
+      body.audio_base64 = await blobToBase64(recordedBlob);
+    } else if (file) {
+      body.audio_base64 = await fileToBase64(file);
+    } else if (url) {
+      body.audio_url = url;
+    } else {
+      throw new Error('Please record audio, upload a file, or provide a URL.');
+    }
+
+    const data = await apiCall('/v1/asr', body);
+
+    document.getElementById('asrResText').textContent = data.transcript;
+    document.getElementById('asrResBackend').textContent = data.backend_used;
+    document.getElementById('asrResLang').textContent = data.lang_detected;
+    document.getElementById('asrResTime').textContent = data.processing_ms + ' ms';
+    document.getElementById('asrResConf').textContent = (data.confidence * 100).toFixed(0) + '% conf';
+    showResult('asr', false);
+  } catch (e) {
+    document.getElementById('asrResText').textContent = e.message;
+    showResult('asr', true);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── MT ────────────────────────────────────────────────────────────────────────
+
+async function submitMT() {
+  const btn = document.querySelector('#panel-mt .btn-primary');
+  setLoading(btn, true);
+
+  try {
+    const text = document.getElementById('mtText').value.trim();
+    if (!text) throw new Error('Please enter text to translate.');
+
+    const body = {
+      text,
+      src_lang: document.getElementById('mtSrc').value,
+      tgt_lang: document.getElementById('mtTgt').value,
+      backend: document.getElementById('mtBackend').value,
+    };
+
+    if (body.src_lang === body.tgt_lang) throw new Error('Source and target languages must differ.');
+
+    const data = await apiCall('/v1/translate', body);
+
+    document.getElementById('mtResText').textContent = data.translation;
+    document.getElementById('mtResBackend').textContent = data.backend_used;
+    document.getElementById('mtResTime').textContent = data.processing_ms + ' ms';
+    document.getElementById('mtResConf').textContent = (data.confidence * 100).toFixed(0) + '% conf';
+    showResult('mt', false);
+  } catch (e) {
+    document.getElementById('mtResText').textContent = e.message;
+    showResult('mt', true);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── TTS ───────────────────────────────────────────────────────────────────────
+
+async function submitTTS() {
+  const btn = document.querySelector('#panel-tts .btn-primary');
+  setLoading(btn, true);
+
+  try {
+    const text = document.getElementById('ttsText').value.trim();
+    if (!text) throw new Error('Please enter text to speak.');
+
+    const body = {
+      text,
+      lang: document.getElementById('ttsLang').value,
+      voice: document.getElementById('ttsVoice').value,
+      format: document.getElementById('ttsFormat').value,
+      speed: parseFloat(document.getElementById('ttsSpeed').value),
+      backend: document.getElementById('ttsBackend').value,
+    };
+
+    const data = await apiCall('/v1/tts', body);
+
+    document.getElementById('ttsResBackend').textContent = data.backend_used;
+    document.getElementById('ttsResTime').textContent = data.processing_ms + ' ms';
+    document.getElementById('ttsResDuration').textContent = data.duration_sec.toFixed(1) + 's';
+
+    const player = document.getElementById('ttsAudioPlayer');
+    const errorBox = document.getElementById('ttsResText');
+
+    if (data.audio_base64) {
+      const mime = { mp3: 'audio/mpeg', wav: 'audio/wav', opus: 'audio/opus', ogg: 'audio/ogg' }[data.format] || 'audio/mpeg';
+      player.innerHTML = `<audio controls src="data:${mime};base64,${data.audio_base64}"></audio>`;
+      errorBox.style.display = 'none';
+    } else if (data.audio_url) {
+      player.innerHTML = `<audio controls src="${data.audio_url}"></audio>`;
+      errorBox.style.display = 'none';
+    } else {
+      player.innerHTML = '';
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'No audio returned.';
+    }
+
+    showResult('tts', false);
+  } catch (e) {
+    document.getElementById('ttsAudioPlayer').innerHTML = '';
+    const errorBox = document.getElementById('ttsResText');
+    errorBox.style.display = 'block';
+    errorBox.textContent = e.message;
+    showResult('tts', true);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── LID ───────────────────────────────────────────────────────────────────────
+
+async function submitLID() {
+  const btn = document.querySelector('#panel-lid .btn-primary');
+  setLoading(btn, true);
+
+  try {
+    const text = document.getElementById('lidText').value.trim();
+    if (!text) throw new Error('Please enter text to identify.');
+
+    const body = {
+      text,
+      top_k: parseInt(document.getElementById('lidTopK').value),
+    };
+
+    const data = await apiCall('/v1/lid', body);
+
+    const LANG_NAMES = {
+      hi: 'Hindi', ta: 'Tamil', te: 'Telugu', bn: 'Bengali', mr: 'Marathi',
+      gu: 'Gujarati', kn: 'Kannada', ml: 'Malayalam', pa: 'Punjabi', or: 'Odia',
+      as: 'Assamese', ur: 'Urdu', en: 'English', sa: 'Sanskrit',
+      mai: 'Maithili', kok: 'Konkani', ne: 'Nepali',
+    };
+
+    let output = `Language: ${LANG_NAMES[data.lang] || data.lang} (${data.lang})`;
+    if (data.script) output += `\nScript: ${data.script}`;
+    output += `\nConfidence: ${(data.confidence * 100).toFixed(1)}%`;
+    if (data.is_code_mixed) {
+      output += `\nCode-mixed: Yes (${data.code_mix_langs.join(', ')})`;
+    }
+    if (data.candidates && data.candidates.length > 1) {
+      output += '\n\nOther candidates:';
+      data.candidates.slice(1).forEach(c => {
+        output += `\n  ${LANG_NAMES[c.lang] || c.lang} (${c.lang}) — ${(c.confidence * 100).toFixed(1)}%`;
+      });
+    }
+
+    document.getElementById('lidResText').textContent = output;
+    document.getElementById('lidResBackend').textContent = data.backend_used;
+    document.getElementById('lidResTime').textContent = data.processing_ms + ' ms';
+    showResult('lid', false);
+  } catch (e) {
+    document.getElementById('lidResText').textContent = e.message;
+    showResult('lid', true);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── NLU ───────────────────────────────────────────────────────────────────────
+
+async function submitNLU() {
+  const btn = document.querySelector('#panel-nlu .btn-primary');
+  setLoading(btn, true);
+
+  try {
+    const text = document.getElementById('nluText').value.trim();
+    if (!text) throw new Error('Please enter an utterance to analyze.');
+
+    const body = {
+      text,
+      lang: document.getElementById('nluLang').value,
+      domain: document.getElementById('nluDomain').value,
+      generate_response: document.getElementById('nluGenResponse').checked,
+    };
+
+    const data = await apiCall('/v1/nlu', body);
+
+    let output = `Intent: ${data.intent}\nConfidence: ${(data.confidence * 100).toFixed(1)}%`;
+    if (data.entities && data.entities.length > 0) {
+      output += '\n\nEntities:';
+      data.entities.forEach(e => {
+        output += `\n  ${e.type}: "${e.value}" (${(e.confidence * 100).toFixed(0)}%)`;
+      });
+    }
+    if (data.response_text) {
+      output += `\n\nResponse: ${data.response_text}`;
+    }
+
+    document.getElementById('nluResText').textContent = output;
+    document.getElementById('nluResBackend').textContent = data.backend_used;
+    document.getElementById('nluResTime').textContent = data.processing_ms + ' ms';
+    document.getElementById('nluResConf').textContent = (data.confidence * 100).toFixed(0) + '% conf';
+    showResult('nlu', false);
+  } catch (e) {
+    document.getElementById('nluResText').textContent = e.message;
+    showResult('nlu', true);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+</script>
+
+</body>
+</html>

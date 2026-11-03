@@ -1,0 +1,69 @@
+# Healthcare Domain Intents
+# For triage bots, hospital helplines, health info services.
+# IMPORTANT: These intents provide information routing only.
+# This system MUST NOT be used to provide medical diagnoses or treatment advice.
+
+intents:
+  book_appointment:
+    patterns:
+      - "(appointment|milna|milne\\s*ka\\s*waqt|time)\\s*(book|le|lena|chahiye|fix|karna)"
+      - "(doctor|daaktar|specialist)\\s*(se\\s*milna|appointment|dikhaana)"
+      - "(hospital|clinic|dispensary)\\s*(mein\\s*)?(jaana|jana|registration)"
+    entities:
+      - doctor_name
+      - specialty
+      - date
+      - time
+    domain: healthcare
+    responses:
+      hi: "डॉक्टर अपॉइंटमेंट बुक हो रही है..."
+      en: "Booking doctor appointment..."
+      ta: "மருத்துவர் சந்திப்பு பதிவு செய்யப்படுகிறது..."
+
+  find_hospital:
+    patterns:
+      - "(hospital|aspatal|nursing\\s*home|clinic)\\s*(kahan|where|nearest|paas\\s*mein|dhundho)"
+      - "(nazdik|nearby|pass\\s*ka)\\s*(hospital|doctor|dawakhana)"
+      - "emergency\\s*(mein\\s*)?(kahan|where|jayen|jaana)"
+    entities:
+      - location
+      - specialty
+    domain: healthcare
+    responses:
+      hi: "नज़दीकी अस्पताल खोज रहे हैं..."
+      en: "Finding nearest hospital..."
+
+  medicine_query:
+    patterns:
+      - "(dawai|medicine|dava|tablet|capsule)\\s*(ke\\s*bare\\s*mein|kya\\s*hai|kaise|price|kahan)"
+      - "(generic|brand)\\s*(medicine|dawai)\\s*(milegi|available|price)"
+    entities:
+      - medicine_name
+    domain: healthcare
+    responses:
+      hi: "दवाई की जानकारी ले रहे हैं..."
+      en: "Getting medicine information..."
+
+  emergency_services:
+    patterns:
+      - "(ambulance|108|emergency|accident|urgent\\s*help)"
+      - "(dil\\s*ka\\s*dora|heart\\s*attack|stroke|behosh|unconscious)"
+      - "(jald|quickly|turant)\\s*(madad|help|doctor)"
+    entities: []
+    domain: healthcare
+    responses:
+      hi: "🚨 आपातकाल! कृपया तुरंत 108 डायल करें (राष्ट्रीय एम्बुलेंस सेवा)।"
+      en: "🚨 EMERGENCY! Please call 108 immediately (National Ambulance Service)."
+      ta: "🚨 அவசரநிலை! உடனடியாக 108 அழைக்கவும் (தேசிய ஆம்புலன்ஸ்)."
+
+  health_scheme:
+    patterns:
+      - "(ayushman|pmjay|health\\s*card|janani|suraksha)\\s*(yojana|scheme|kya\\s*hai|kaise)"
+      - "(bima|insurance)\\s*(kaise|kahan|kab)\\s*(milega|milti|apply)"
+    entities:
+      - scheme_name
+      - state
+    domain: healthcare
+    responses:
+      hi: "सरकारी स्वास्थ्य योजना की जानकारी ले रहे हैं..."
+      en: "Getting health scheme information..."

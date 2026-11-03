@@ -1,0 +1,73 @@
+# Agriculture Domain Intents
+# Community-contributed domain for Indian farming use cases.
+# Covers: crop prices, weather for farming, soil, seeds, government schemes.
+#
+# Language coverage: Hindi (primary), English fallback
+# Contributors: Add patterns in more Indian languages!
+
+intents:
+  check_crop_price:
+    patterns:
+      - "(fasal|crop|gehu|chawal|dhan|makka|sarso|ganna|cotton|kapas)\\s*(ka\\s*)?(bhav|price|rate|dam|mandi\\s*rate)"
+      - "(aaj|kal|is\\s*waqt)\\s*(ka\\s*)?(mandi|market)\\s*(bhav|rate|price)"
+      - "(kitne|kya)\\s*(mein|me)\\s*(bik\\s*rahi|sell)\\s*(hai|hain)?"
+    entities:
+      - crop_name
+      - location
+      - date
+    domain: agriculture
+    responses:
+      hi: "फसल की मंडी दर जाँच रहे हैं..."
+      en: "Checking mandi (market) prices..."
+      pa: "ਫ਼ਸਲ ਦੀ ਮੰਡੀ ਦਰ ਜਾਂਚ ਰਹੇ ਹਾਂ..."
+
+  weather_for_farming:
+    patterns:
+      - "(baarish|rain|barsat)\\s*(kab|when|hogi|aayegi|hai)"
+      - "(kheti|farming|fasal|crops?)\\s*(ke\\s*liye\\s*)?(mausam|weather|forecast)"
+      - "(aaj|kal|is\\s*hafte)\\s*(ka)\\s*(mausam|weather)"
+    entities:
+      - location
+      - date
+    domain: agriculture
+    responses:
+      hi: "कृषि मौसम पूर्वानुमान ले रहे हैं..."
+      en: "Getting agricultural weather forecast..."
+
+  pest_disease_query:
+    patterns:
+      - "(keeda|pest|kida|bimari|disease|rog)\\s*(lag|laga|aa\\s*raha|ho\\s*raha|problem)"
+      - "(fasal|crop)\\s*(mein\\s*)?(keeda|bimari|jhulsna|rust|blight)"
+      - "patte\\s*(peele|yellow|jhad\\s*rahe|girne)"
+    entities:
+      - crop_name
+      - symptom
+    domain: agriculture
+    responses:
+      hi: "फसल रोग की जानकारी खोज रहे हैं..."
+      en: "Looking up crop disease information..."
+
+  government_scheme:
+    patterns:
+      - "(PM|pradhan\\s*mantri|sarkar)\\s*(kisan|fasal|bima|yojana|scheme)"
+      - "(kisan\\s*samman|fasal\\s*bima|PM-KISAN)\\s*(kya|kaise|milega|apply)"
+      - "(subsidy|anudan)\\s*(kaise|kab|kitna)\\s*(milega|milti|milta)?"
+    entities:
+      - scheme_name
+      - state
+    domain: agriculture
+    responses:
+      hi: "सरकारी योजना की जानकारी ले रहे हैं..."
+      en: "Fetching government scheme information..."
+
+  seed_fertilizer_query:
+    patterns:
+      - "(beej|seed|khad|fertilizer|urea|DAP)\\s*(kahan|kaise|kya|kitna|price|bhav|milega)"
+      - "(konsa\\s*beej|which\\s*seed|best\\s*seed)\\s*(lagaun|plant|use)"
+    entities:
+      - crop_name
+      - location
+    domain: agriculture
+    responses:
+      hi: "बीज और खाद की जानकारी ले रहे हैं..."
+      en: "Getting seed and fertilizer information..."

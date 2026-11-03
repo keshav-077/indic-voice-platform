@@ -1,0 +1,68 @@
+# General / Conversational Intents
+# Covers casual Hindi, frustration, help requests, complaints, farewells, small talk.
+
+intents:
+  express_frustration:
+    patterns:
+      - "(gussa|angry|irritate|pareshan|tang|frustrat)"
+      - "(mat dila|mat karo|band karo|chod do|bakwas)"
+      - "(kya bakwas|bewakoof|pagal|ullu)"
+    entities: []
+    domain: general
+    responses:
+      hi: "माफ़ कीजिए, मैं आपकी मदद करने की कोशिश कर रहा हूं। कृपया बताइए क्या समस्या है?"
+      en: "I'm sorry if I upset you. How can I help you better?"
+
+  ask_help:
+    patterns:
+      - "(madad|help|sahayata|sahara)\\s*(karo|do|chahiye|kijiye|please)"
+      - "(kya kar sakte|what can you do|kya kya|features)"
+      - "(kaise|how)\\s*(use|istemal|karu|kare)"
+    entities: []
+    domain: general
+    responses:
+      hi: "मैं आपकी इन चीज़ों में मदद कर सकता हूं: बिल देखना, भुगतान, अपॉइंटमेंट बुक करना, मौसम, फसल की कीमत, और बहुत कुछ।"
+      en: "I can help with: viewing bills, payments, appointments, weather, crop prices, and more."
+
+  complain:
+    patterns:
+      - "(complaint|shikayat|complain)\\s*(karna|karni|file|register|darj)"
+      - "(kaam nahi|not working|problem|dikkat|issue|samasya)"
+      - "(kharab|bekar|worst|terrible|ghatiya)\\s*(service|seva|kaam)"
+    entities: []
+    domain: general
+    responses:
+      hi: "आपकी शिकायत दर्ज की जा रही है। कृपया अपनी समस्या विस्तार से बताएं।"
+      en: "Registering your complaint. Please describe your issue in detail."
+
+  farewell:
+    patterns:
+      - "(bye|alvida|phir milte|tata|chalo|goodbye|see you)"
+      - "(bas itna|that's all|ho gaya|done|khatam)"
+    entities: []
+    domain: general
+    responses:
+      hi: "अलविदा! फिर मिलेंगे।"
+      en: "Goodbye! See you again."
+
+  ask_language:
+    patterns:
+      - "(hindi|english|tamil|telugu|bangla|marathi)\\s*(mein|me|in)\\s*(baat|bolo|talk|speak)"
+      - "(bhasha|language)\\s*(badlo|change|switch)"
+    entities:
+      - language
+    domain: general
+    responses:
+      hi: "भाषा बदली जा रही है..."
+      en: "Switching language..."
+
+  small_talk:
+    patterns:
+      - "(kaisa|kaise|kya haal|how are you|theek|sab theek)"
+      - "(aap kaun|who are you|tumhara naam|your name)"
+      - "(maza|fun|joke|chutkula|hasao)"
+    entities: []
+    domain: general
+    responses:
+      hi: "मैं ठीक हूं, धन्यवाद! बताइए, मैं आपकी कैसे मदद करूं?"
+      en: "I'm doing well, thanks! How can I help you?"

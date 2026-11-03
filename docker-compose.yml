@@ -1,0 +1,175 @@
+version: "3.9"
+
+# BharatVoiceAI — Local Development Stack
+# Run: docker compose up -d
+# API: http://localhost:8000
+# Docs: http://localhost:8000/docs
+# Grafana: http://localhost:3000 (admin/admin)
+# Prometheus: http://localhost:9090
+
+services:
+  # Main API
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    image: bharatvoiceai:latest
+    container_name: bharatvoiceai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - VAI_DB_URL=postgresql+asyncpg://vai:vai@postgres:5432/vai
+      - VAI_REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+      - WARMUP_MODELS=${WARMUP_MODELS:-false}
+      - VAI_ASR_BACKEND=${VAI_ASR_BACKEND:-bhashini}
+      - VAI_MT_BACKEND=${VAI_MT_BACKEND:-bhashini}
+      - VAI_TTS_BACKEND=${VAI_TTS_BACKEND:-bhashini}
+      - BHASHINI_USER_ID=${BHASHINI_USER_ID:-}
+      - BHASHINI_API_KEY=${BHASHINI_API_KEY:-}
+      - SARVAM_API_KEY=${SARVAM_API_KEY:-}
+      - VAI_JWT_SECRET=${VAI_JWT_SECRET:-dev_secret_change_in_production_min32chars}
+      - VAI_API_KEY_SALT=${VAI_API_KEY_SALT:-dev_salt_change_me}
+      - STATIC_API_KEYS=${STATIC_API_KEYS:-dev-test-key-12345}
+      - PROMETHEUS_ENABLED=true
+    volumes:
+      - model_cache:/tmp/vai_models
+      - ./:/app  # Hot reload in dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vai-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # GPU Worker (separate service for heavy models)
+  # Uncomment if you have a GPU and want dedicated model workers
+  # gpu-worker:
+  #   build:
+  #     context: .
+  #     dockerfile: infra/docker/Dockerfile.gpu
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   environment:
+  #     - DEVICE=cuda
+  #     - WARMUP_MODELS=true
+  #   volumes:
+  #     - model_cache:/tmp/vai_models
+  #   networks:
+  #     - vai-net
+
+  # PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: vai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vai
+      POSTGRES_PASSWORD: vai
+      POSTGRES_DB: vai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - vai-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: vai-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - vai-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vai-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-admin-api"
+    ports:
+      - "9090:9090"
+    networks:
+      - vai-net
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vai-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infra/monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - vai-net
+
+  # Nginx (reverse proxy + SSL termination)
+  nginx:
+    image: nginx:alpine
+    container_name: vai-nginx
+    restart: unless-stopped
+    volumes:
+      - ./infra/docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+    networks:
+      - vai-net
+
+networks:
+  vai-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  model_cache:  # Shared model cache across containers (saves re-downloads)

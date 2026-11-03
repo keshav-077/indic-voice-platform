@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# Environment — NEVER commit real credentials
+.env
+.env.local
+.env.production
+*.env
+
+# Models & data (too large for git)
+/tmp/vai_models/
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+
+# Evaluation outputs
+eval_results/
+coverage/
+.coverage
+coverage.xml
+htmlcov/
+
+# Testing
+.pytest_cache/
+test.db
+test*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+.docker/
+
+# Logs
+*.log
+logs/
+
+# Node (if any frontend tooling)
+node_modules/
+
+# Secrets & certificates
+*.pem
+*.key
+*.crt
+*.p12
+secrets/

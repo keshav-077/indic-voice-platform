@@ -1,0 +1,340 @@
+# BharatVoiceAI — Kubernetes Deployment
+# Apply: kubectl apply -f infra/k8s/
+#
+# Prerequisites:
+#   - kubectl configured for your cluster
+#   - secrets created: kubectl create secret generic vai-secrets --from-env-file=.env
+#   - ingress-nginx installed
+#   - cert-manager installed (for TLS)
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vai
+  labels:
+    app.kubernetes.io/name: bharatvoiceai
+
+---
+# ConfigMap (non-sensitive config)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vai-config
+  namespace: vai
+data:
+  LOG_LEVEL: "INFO"
+  WARMUP_MODELS: "true"
+  PROMETHEUS_ENABLED: "true"
+  VAI_AUDIO_LOGGING: "false"
+  VAI_PII_MASKING: "true"
+  VAI_DATA_RETENTION_DAYS: "0"
+  CONSENT_REQUIRED: "true"
+  VAI_ASR_BACKEND: "indicwhisper"
+  VAI_MT_BACKEND: "indictrans2"
+  VAI_TTS_BACKEND: "indic_parler"
+  VAI_LID_BACKEND: "indiclid"
+  VAI_NLU_BACKEND: "rule+llm"
+  RATE_LIMIT_ASR_RPM: "30"
+  RATE_LIMIT_MT_RPM: "120"
+  RATE_LIMIT_TTS_RPM: "60"
+
+---
+# Secret (create via kubectl — do NOT commit real values)
+# kubectl create secret generic vai-secrets \
+#   --from-literal=VAI_JWT_SECRET="..." \
+#   --from-literal=VAI_API_KEY_SALT="..." \
+#   --from-literal=STATIC_API_KEYS="key1,key2" \
+#   --from-literal=BHASHINI_USER_ID="..." \
+#   --from-literal=BHASHINI_API_KEY="..." \
+#   --from-literal=SARVAM_API_KEY="..." \
+#   --from-literal=VAI_DB_URL="postgresql+asyncpg://..." \
+#   --from-literal=VAI_REDIS_URL="redis://..." \
+#   --namespace vai
+#
+# (Placeholder shown for reference)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vai-secrets
+  namespace: vai
+type: Opaque
+stringData:
+  VAI_JWT_SECRET: "REPLACE_WITH_STRONG_SECRET_MIN_32_CHARS"
+  VAI_API_KEY_SALT: "REPLACE_WITH_SALT"
+  STATIC_API_KEYS: "REPLACE_WITH_API_KEYS"
+  BHASHINI_USER_ID: ""
+  BHASHINI_API_KEY: ""
+  SARVAM_API_KEY: ""
+  VAI_DB_URL: "postgresql+asyncpg://vai:REPLACE@postgres-service:5432/vai"
+  VAI_REDIS_URL: "redis://redis-service:6379/0"
+
+---
+# PersistentVolumeClaim (model cache)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-cache-pvc
+  namespace: vai
+spec:
+  accessModes: [ReadWriteMany]   # RWX so all replicas share cache
+  resources:
+    requests:
+      storage: 50Gi              # IndicWhisper ~3GB, IndicTrans2 ~4GB, Parler ~8GB
+
+---
+# Deployment: API (CPU replicas)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bharatvoiceai
+  namespace: vai
+  labels:
+    app: bharatvoiceai
+    version: "0.1.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bharatvoiceai
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0          # Zero-downtime deployments
+  template:
+    metadata:
+      labels:
+        app: bharatvoiceai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: vai-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      # Pre-pull models before traffic starts
+      initContainers:
+        - name: model-warmup-check
+          image: ghcr.io/samirdutta/bharatvoiceai:latest
+          command: ["python", "-c", "from core.config import settings; print('Config OK')"]
+          envFrom:
+            - configMapRef: {name: vai-config}
+            - secretRef: {name: vai-secrets}
+          resources:
+            requests: {cpu: "100m", memory: "128Mi"}
+            limits: {cpu: "200m", memory: "256Mi"}
+
+      containers:
+        - name: api
+          image: ghcr.io/samirdutta/bharatvoiceai:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef: {name: vai-config}
+            - secretRef: {name: vai-secrets}
+          env:
+            - name: MODEL_CACHE_DIR
+              value: /mnt/model-cache
+          volumeMounts:
+            - name: model-cache
+              mountPath: /mnt/model-cache
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "6Gi"
+          livenessProbe:
+            httpGet: {path: /health/live, port: 8000}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: {path: /health/ready, port: 8000}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          startupProbe:            # Models take time to load
+            httpGet: {path: /health/live, port: 8000}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30   # Up to 5 minutes
+
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: model-cache-pvc
+
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels: {app: bharatvoiceai}
+
+---
+# Deployment: GPU Worker (for heavy inference)
+# Uncomment when GPU nodes are available
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: vai-gpu-worker
+#   namespace: vai
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels: {app: vai-gpu-worker}
+#   template:
+#     metadata:
+#       labels: {app: vai-gpu-worker}
+#     spec:
+#       containers:
+#         - name: gpu-worker
+#           image: ghcr.io/samirdutta/bharatvoiceai:latest-gpu
+#           resources:
+#             limits:
+#               nvidia.com/gpu: "1"
+#               memory: "16Gi"
+#           env:
+#             - name: DEVICE
+#               value: "cuda"
+
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bharatvoiceai-hpa
+  namespace: vai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bharatvoiceai
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300   # Scale down slowly to avoid thrashing
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: bharatvoiceai-service
+  namespace: vai
+  annotations:
+    prometheus.io/scrape: "true"
+spec:
+  selector: {app: bharatvoiceai}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
+
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vai-ingress
+  namespace: vai
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "30m"       # audio uploads
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"    # long inference
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    # WebSocket support for /v1/asr/stream
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+spec:
+  tls:
+    - hosts: [api.your-domain.com]
+      secretName: vai-tls-cert
+  rules:
+    - host: api.your-domain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bharatvoiceai-service
+                port: {number: 80}
+
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vai-sa
+  namespace: vai
+
+---
+# PodDisruptionBudget (keep at least 1 pod during node drain)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bharatvoiceai-pdb
+  namespace: vai
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: bharatvoiceai}
+
+---
+# NetworkPolicy (restrict traffic to only what's needed)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bharatvoiceai-netpol
+  namespace: vai
+spec:
+  podSelector:
+    matchLabels: {app: bharatvoiceai}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ingress-nginx}
+      ports: [{port: 8000}]
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: monitoring}
+      ports: [{port: 8000}]      # Prometheus scrape
+  egress:
+    - {}                          # Allow all outbound (BHASHINI, Sarvam APIs, etc.)

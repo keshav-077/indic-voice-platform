@@ -1,0 +1,164 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bharatvoiceai"
+version = "0.1.0"
+description = "Open-source AI services layer for 22 Indian languages: ASR, MT, TTS, LID, NLU"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.11"
+keywords = ["india", "nlp", "asr", "tts", "translation", "indic", "bhashini", "ai4bharat"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Minimal runtime dependencies (no ML models — use extras)
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "gunicorn>=22.0.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "httpx>=0.27.0",
+    "pyjwt>=2.8.0",
+    "redis[asyncio]>=5.0.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.29.0",
+    "python-multipart>=0.0.9",
+    "prometheus-client>=0.20.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# AI model backends (heavy)
+models = [
+    "torch>=2.1.0",
+    "transformers>=4.40.0",
+    "accelerate>=0.29.0",
+    "sentencepiece>=0.2.0",
+    "soundfile>=0.12.1",
+    "librosa>=0.10.1",
+    "pydub>=0.25.1",
+    "IndicTransToolkit>=0.1.0",
+    "parler-tts>=0.2.0",
+    "fasttext-wheel>=0.9.2",
+    "indic-transliteration>=2.3.0",
+    "gTTS>=2.5.0",
+    "langdetect>=1.0.9",
+    "huggingface-hub>=0.30.0",
+]
+
+# GPU extras (CUDA)
+gpu = [
+    "torch>=2.1.0",
+    "flash-attn>=2.5.0",  # Required for IndicTrans2 flash_attention_2
+]
+
+# API production stack
+api = [
+    "bharatvoiceai",        # base
+    "bharatvoiceai[models]",
+]
+
+# Dev & testing
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "httpx>=0.27.0",  # async test client
+    "respx>=0.21.0",  # mock httpx
+    "ruff>=0.4.0",
+    "mypy>=1.9.0",
+    "pre-commit>=3.7.0",
+    "locust>=2.24.0",  # load testing
+]
+
+# Evaluation scripts
+eval = [
+    "jiwer>=3.0.4",        # WER calculation
+    "sacrebleu>=2.4.0",    # BLEU / ChrF
+    "datasets>=2.18.0",    # HuggingFace datasets (FLORES-200, etc.)
+    "pandas>=2.2.0",
+    "matplotlib>=3.8.0",
+    "tqdm>=4.66.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/samirdutta/bharatvoiceai"
+Documentation = "https://bharatvoiceai.readthedocs.io"
+Repository = "https://github.com/samirdutta/bharatvoiceai.git"
+"Bug Tracker" = "https://github.com/samirdutta/bharatvoiceai/issues"
+Changelog = "https://github.com/samirdutta/bharatvoiceai/blob/main/CHANGELOG.md"
+
+[project.scripts]
+bharatvoiceai = "api.main:app"
+
+# Ruff (linter + formatter)
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = ["tests/fixtures/", "scripts/legacy/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "S", "B", "A", "C4", "RUF"]
+ignore = [
+    "S101",     # assert in tests
+    "S105",     # hardcoded password false positives (token_type etc.)
+    "S108",     # /tmp usage is intentional for model cache
+    "S110",     # try-except-pass in metrics is intentional
+    "B008",     # Depends() in default arg — FastAPI pattern
+    "B904",     # raise from — not needed for HTTP exceptions
+    "B905",     # zip strict — Python 3.10+ only
+    "B007",     # unused loop var
+    "N812",     # lowercase import alias (torch.nn.functional as F)
+    "N813",     # camelcase import alias
+    "RUF012",   # mutable class attrs — intentional for dispatcher pattern
+    "RUF019",   # unnecessary key check
+    "RUF059",   # unused unpacked var
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "F841", "E501"]
+"scripts/**" = ["S", "E501"]
+
+# Mypy
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+warn_return_any = false
+exclude = ["tests/", "scripts/"]
+
+# Pytest
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = [
+    "--cov=api",
+    "--cov=services",
+    "--cov=core",
+    "--cov-report=term-missing",
+    "--cov-report=html:coverage",
+    "-v",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["api", "services", "core"]
+omit = ["tests/*", "scripts/*", "*/migrations/*"]
+
+[tool.coverage.report]
+fail_under = 40
+show_missing = true
+
+# Setuptools
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*", "services*", "core*"]
